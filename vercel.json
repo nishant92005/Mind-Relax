@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "dilkash_interactive_chill_vibe_space.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/dilkash_interactive_chill_vibe_space.html"
+    }
+  ]
+}
