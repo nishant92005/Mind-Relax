@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dilkash — Interactive Chill &amp; Vibe Space</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      background-color: #090a14;
+      color: #f8fafc;
+      user-select: none;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.5);
+    }
+    /* Glassmorphism Cards */
+    .glass-panel {
+      background: rgba(15, 18, 36, 0.68);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.6);
+    }
+    .glass-pill {
+      background: rgba(30, 35, 64, 0.65);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-pill:hover {
+      border-color: rgba(255, 255, 255, 0.28);
+      transform: translateY(-1px);
+    }
+    .glass-pill.active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(168, 85, 247, 0.32));
+      border-color: rgba(251, 191, 36, 0.65);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.22);
+    }
+    /* Range Sliders */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fbbf24;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.7);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.18);
+    }
+    /* Vinyl Spin Animation */
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .vinyl-spin {
+      animation: spinSlow 18s linear infinite;
+      animation-play-state: paused;
+    }
+    .vinyl-spin.playing {
+      animation-play-state: running;
+    }
+    /* Equalizer Bars */
+    @keyframes eqBounce {
+      0%, 100% { height: 4px; }
+      50% { height: 18px; }
+    }
+    .eq-bar {
+      width: 3px;
+      height: 4px;
+      border-radius: 99px;
+      background: #fbbf24;
+      transition: height 0.2s ease;
+    }
+    .playing .eq-bar-1 { animation: eqBounce 0.7s ease-in-out infinite; }
+    .playing .eq-bar-2 { animation: eqBounce 0.55s ease-in-out 0.15s infinite; }
+    .playing .eq-bar-3 { animation: eqBounce 0.85s ease-in-out 0.3s infinite; }
+    .playing .eq-bar-4 { animation: eqBounce 0.65s ease-in-out 0.1s infinite; }
+    /* Breathing Circle */
+    .breath-orb {
+      transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col relative selection:bg-amber-500/30 selection:text-amber-200">
+
+  <!-- Fullscreen Interactive Background Canvas -->
+  <canvas id="vibeCanvas" class="fixed inset-0 w-full h-full z-0 cursor-crosshair"></canvas>
+
+  <!-- Floating Toast Notification -->
+  <div id="toastBox" class="fixed top-4 right-4 z-50 pointer-events-none opacity-0 translate-y-[-10px] transition-all duration-300">
+    <div class="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-medium text-amber-200 border border-amber-400/30 shadow-lg">
+      <span id="toastIcon">✨</span>
+      <span id="toastText">Vibe updated!</span>
+    </div>
+  </div>
+
+  <!-- Top Navigation & Quick Status Header -->
+  <header class="relative z-10 w-full max-w-7xl mx-auto px-4 pt-3 pb-2 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-rose-500 to-purple-600 p-0.5 shadow-lg shadow-amber-500/20">
+        <div class="w-full h-full bg-slate-950/90 rounded-[14px] flex items-center justify-center text-lg">
+          🌙
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-amber-200 via-rose-200 to-purple-200 bg-clip-text text-transparent">
+            Dilkash Lounge
+          </h1>
+          <span id="liveMoodBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 font-medium">
+            Chai &amp; Baarish
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400">Touch or drag anywhere on the sky to create ripples &amp; music</p>
+      </div>
+    </div>
+
+    <!-- Master Audio & Quick Presets Toolbar -->
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="masterPlayBtn" type="button" class="px-4 py-2 rounded-full font-semibold text-xs flex items-center gap-2 bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 shadow-lg shadow-amber-500/25 hover:brightness-110 active:scale-95 transition-all">
+        <span id="masterPlayIcon">▶</span>
+        <span id="masterPlayLabel">Start Vibe Audio</span>
+        <span id="eqContainer" class="flex items-end gap-0.5 h-4 ml-1">
+          <span class="eq-bar eq-bar-1"></span>
+          <span class="eq-bar eq-bar-2"></span>
+          <span class="eq-bar eq-bar-3"></span>
+          <span class="eq-bar eq-bar-4"></span>
+        </span>
+      </button>
+
+      <button id="zenHideBtn" type="button" class="glass-pill px-3 py-2 rounded-full text-xs font-medium text-slate-200 flex items-center gap-1.5" title="Hide panels to enjoy full-screen interactive canvas">
+        <span id="zenHideIcon">👁️</span>
+        <span id="zenHideText" class="hidden sm:inline">Pure Canvas</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main id="mainPanels" class="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 py-2 flex flex-col justify-between gap-4 transition-opacity duration-500">
+
+    <!-- Top Row: 1-Click Vibe Presets + Visual Mode Switcher -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+      <!-- 1-Click Mood Presets -->
+      <div class="lg:col-span-7 glass-panel rounded-2xl p-3 flex flex-col justify-between gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-amber-300/90 flex items-center gap-1.5">
+            <span>🎧</span> 1-Click Mood Presets (Ek Click Mein Mehfil)
+          </span>
+          <span class="text-[11px] text-slate-400">Auto-mixes sound + visuals</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button type="button" data-preset="chai_baarish" class="preset-btn glass-pill active rounded-xl p-2.5 text-left flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+              <span class="text-base">☕🌧️</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">Cozy</span>
+            </div>
+            <div class="text-xs font-semibold text-slate-100">Chai &amp; Baarish</div>
+            <div class="text-[10px] text-slate-400 truncate">Rain + Warm Lo-Fi + Crackle</div>
+          </button>
+
+          <button type="button" data-preset="pahadi_raat" class="preset-btn glass-pill rounded-xl p-2.5 text-left flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+              <span class="text-base">🏔️✨</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-400/20 text-emerald-300">Peace</span>
+            </div>
+            <div class="text-xs font-semibold text-slate-100">Pahadi Starlight</div>
+            <div class="text-[10px] text-slate-400 truncate">Night Breeze + Chimes + Stars</div>
+          </button>
+
+          <button type="button" data-preset="mumbai_drive" class="preset-btn glass-pill rounded-xl p-2.5 text-left flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+              <span class="text-base">🌃🚗</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-fuchsia-400/20 text-fuchsia-300">Dreamy</span>
+            </div>
+            <div class="text-xs font-semibold text-slate-100">Marine Drive 2AM</div>
+            <div class="text-[10px] text-slate-400 truncate">Synth Chords + Deep Pulse</div>
+          </button>
+
+          <button type="button" data-preset="zen_sukoon" class="preset-btn glass-pill rounded-xl p-2.5 text-left flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+              <span class="text-base">🪷🌊</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-300">Zen</span>
+            </div>
+            <div class="text-xs font-semibold text-slate-100">Sukoon Ripples</div>
+            <div class="text-[10px] text-slate-400 truncate">Jal Tarang + 432Hz Drone</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Canvas Visual Modes & Palette -->
+      <div class="lg:col-span-5 glass-panel rounded-2xl p-3 flex flex-col justify-between gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+            <span>🎨</span> Interactive Sky Toy
+          </span>
+          <div class="flex items-center gap-1.5">
+            <button id="sparkBurstBtn" type="button" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/40 text-amber-200 text-[11px] font-medium transition">
+              🎆 Spark Burst
+            </button>
+            <button id="paletteCycleBtn" type="button" class="px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/35 border border-purple-400/40 text-purple-200 text-[11px] font-medium transition">
+              🎨 Theme: <span id="paletteNameLabel">Sunset Chai</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Visual Canvas Modes -->
+        <div class="grid grid-cols-4 gap-1.5">
+          <button type="button" data-vismode="nebula" class="vismode-btn glass-pill active rounded-xl py-2 px-1.5 text-center flex flex-col items-center gap-0.5">
+            <span class="text-sm">🌠</span>
+            <span class="text-[11px] font-medium">Sitare</span>
+          </button>
+          <button type="button" data-vismode="aurora" class="vismode-btn glass-pill rounded-xl py-2 px-1.5 text-center flex flex-col items-center gap-0.5">
+            <span class="text-sm">🌊</span>
+            <span class="text-[11px] font-medium">Lehrein</span>
+          </button>
+          <button type="button" data-vismode="ripples" class="vismode-btn glass-pill rounded-xl py-2 px-1.5 text-center flex flex-col items-center gap-0.5">
+            <span class="text-sm">💧</span>
+            <span class="text-[11px] font-medium">Boondein</span>
+          </button>
+          <button type="button" data-vismode="fireflies" class="vismode-btn glass-pill rounded-xl py-2 px-1.5 text-center flex flex-col items-center gap-0.5">
+            <span class="text-sm">✨</span>
+            <span class="text-[11px] font-medium">Jugnu</span>
+          </button>
+        </div>
+
+        <!-- Density & Flow Sliders -->
+        <div class="grid grid-cols-2 gap-3 pt-0.5">
+          <div class="flex items-center gap-2">
+            <label for="densitySlider" class="text-[11px] text-slate-300 whitespace-nowrap">Count:</label>
+            <input id="densitySlider" type="range" min="30" max="180" value="95" />
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="speedSlider" class="text-[11px] text-slate-300 whitespace-nowrap">Flow:</label>
+            <input id="speedSlider" type="range" min="2" max="25" value="10" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Middle Interactive Stage Spacer (Lets the user see & play with the canvas in the center!) -->
+    <section class="my-auto py-3 flex flex-col items-center justify-center text-center pointer-events-none">
+      <!-- Guided Breathing Overlay Widget (Hidden unless toggled or shown compactly) -->
+      <div id="breathingStageCard" class="hidden pointer-events-auto glass-panel rounded-3xl p-5 max-w-xs w-full mx-auto flex-col items-center gap-3 border border-cyan-400/30">
+        <div class="w-full flex items-center justify-between">
+          <span class="text-xs font-semibold text-cyan-300 uppercase tracking-wider">🧘 Saans Lo (Breathe)</span>
+          <button id="closeBreathBtn" type="button" class="text-xs text-slate-400 hover:text-white px-2 py-0.5 rounded">✕</button>
+        </div>
+        <div class="relative w-32 h-32 flex items-center justify-center my-2">
+          <div id="breathOrbOuter" class="breath-orb absolute inset-0 rounded-full bg-gradient-to-tr from-cyan-500/25 via-purple-500/25 to-amber-400/25 border border-cyan-300/40 scale-75"></div>
+          <div id="breathOrbInner" class="relative z-10 w-20 h-20 rounded-full bg-slate-900/90 border border-white/15 flex flex-col items-center justify-center p-2">
+            <span id="breathPhaseText" class="text-xs font-bold text-cyan-200">Saans Lo</span>
+            <span id="breathTimerText" class="text-[11px] text-slate-400">4s</span>
+          </div>
+        </div>
+        <p id="breathSubHint" class="text-xs text-slate-300">Dheere se naak se saans andar lein...</p>
+        <div class="flex items-center gap-2 w-full">
+          <button type="button" data-breathpattern="box" class="breath-pattern-btn glass-pill active flex-1 py-1.5 rounded-lg text-[11px] font-medium">4-4-4-4 Box</button>
+          <button type="button" data-breathpattern="relax" class="breath-pattern-btn glass-pill flex-1 py-1.5 rounded-lg text-[11px] font-medium">4-7-8 Calm</button>
+        </div>
+      </div>
+
+      <!-- Subtle Canvas Interactive Prompt Banner -->
+      <div id="canvasHintBanner" class="glass-pill px-4 py-1.5 rounded-full text-xs text-slate-200/90 flex items-center gap-2 shadow-sm">
+        <span class="animate-pulse">👆</span>
+        <span id="canvasDynamicPrompt">Sky par click ya drag karo — har chhooan par sitare aur sur bikhrenge!</span>
+      </div>
+    </section>
+
+    <!-- Bottom Row: Lo-Fi Sound Mixer + Dil Ki Baat (Shayari, Thoughts & Breathing Trigger) -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-3 pb-1">
+
+      <!-- Left: Lo-Fi Visual Card & 6-Channel Soundscape Mixer -->
+      <div class="lg:col-span-7 glass-panel rounded-2xl p-3.5 flex flex-col sm:flex-row gap-3.5 items-center sm:items-stretch">
+        <!-- Cozy Artwork & Master Controls -->
+        <div class="w-full sm:w-44 shrink-0 flex flex-row sm:flex-col items-center justify-between bg-slate-950/60 rounded-xl p-2.5 border border-white/10 gap-3">
+          <div class="relative w-20 h-20 sm:w-32 sm:h-32 shrink-0 rounded-xl overflow-hidden shadow-md border border-amber-400/30 group">
+            <img id="lofiCoverArt" src="data:image/jpeg;base64,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" alt="Cozy Chai and Rain Lo-Fi Window" class="w-full h-full object-cover max-w-full" />
+            <div id="vinylBadge" class="vinyl-spin absolute bottom-1.5 right-1.5 w-7 h-7 rounded-full bg-slate-950/90 border border-amber-400/50 flex items-center justify-center text-xs shadow">
+              💿
+            </div>
+          </div>
+
+          <div class="flex-1 sm:w-full flex flex-col justify-between gap-1.5 text-left sm:text-center">
+            <div>
+              <div class="text-xs font-bold text-amber-200 truncate" id="nowPlayingTitle">Raat Ki Chai &amp; Lo-Fi</div>
+              <div class="text-[10px] text-slate-400" id="activeChannelsSummary">3 sounds active • 432Hz</div>
+            </div>
+
+            <div class="flex items-center gap-1.5 mt-1">
+              <span class="text-xs">🔊</span>
+              <input id="masterVolSlider" type="range" min="0" max="100" value="75" aria-label="Master Volume" />
+            </div>
+
+            <label class="flex items-center justify-start sm:justify-center gap-1.5 text-[11px] text-amber-300/90 cursor-pointer pt-0.5">
+              <input id="touchChimesToggle" type="checkbox" checked class="rounded accent-amber-400 cursor-pointer" />
+              <span>Touch Musical Chimes</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 6 Individual Ambient Sound Channels -->
+        <div class="flex-1 w-full grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <!-- Pad 1: Baarish -->
+          <div data-sound="rain" class="sound-card glass-pill active rounded-xl p-2.5 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <button type="button" data-toggle-sound="rain" class="flex items-center gap-1.5 text-left font-semibold text-xs text-slate-100 flex-1">
+                <span class="text-base">🌧️</span>
+                <span>Baarish</span>
+              </button>
+              <span data-status-dot="rain" class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+            </div>
+            <div class="text-[10px] text-slate-400">Rimjhim window rain</div>
+            <input type="range" data-vol-sound="rain" min="0" max="100" value="65" aria-label="Rain Volume" />
+          </div>
+
+          <!-- Pad 2: Lo-Fi Chords -->
+          <div data-sound="chords" class="sound-card glass-pill active rounded-xl p-2.5 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <button type="button" data-toggle-sound="chords" class="flex items-center gap-1.5 text-left font-semibold text-xs text-slate-100 flex-1">
+                <span class="text-base">🎹</span>
+                <span>Lo-Fi Chords</span>
+              </button>
+              <span data-status-dot="chords" class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+            </div>
+            <div class="text-[10px] text-slate-400">Dreamy warm keys</div>
+            <input type="range" data-vol-sound="chords" min="0" max="100" value="55" aria-label="Chords Volume" />
+          </div>
+
+          <!-- Pad 3: Chai & Hearth Crackle -->
+          <div data-sound="crackle" class="sound-card glass-pill active rounded-xl p-2.5 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <button type="button" data-toggle-sound="crackle" class="flex items-center gap-1.5 text-left font-semibold text-xs text-slate-100 flex-1">
+                <span class="text-base">🔥</span>
+                <span>Warm Crackle</span>
+              </button>
+              <span data-status-dot="crackle" class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+            </div>
+            <div class="text-[10px] text-slate-400">Cozy vinyl &amp; bonfire</div>
+            <input type="range" data-vol-sound="crackle" min="0" max="100" value="45" aria-label="Crackle Volume" />
+          </div>
+
+          <!-- Pad 4: Night Breeze & Jugnu -->
+          <div data-sound="wind" class="sound-card glass-pill rounded-xl p-2.5 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <button type="button" data-toggle-sound="wind" class="flex items-center gap-1.5 text-left font-semibold text-xs text-slate-100 flex-1">
+                <span class="text-base">🍃</span>
+                <span>Thandi Hawa</span>
+              </button>
+              <span data-status-dot="wind" class="w-2 h-2 rounded-full bg-slate-600"></span>
+            </div>
+            <div class="text-[10px] text-slate-400">Midnight hill breeze</div>
+            <input type="range" data-vol-sound="wind" min="0" max="100" value="50" aria-label="Wind Volume" />
+          </div>
+
+          <!-- Pad 5: Jal Tarang Chimes -->
+          <div data-sound="chimes" class="sound-card glass-pill rounded-xl p-2.5 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <button type="button" data-toggle-sound="chimes" class="flex items-center gap-1.5 text-left font-semibold text-xs text-slate-100 flex-1">
+                <span class="text-base">🎐</span>
+                <span>Jal Tarang</span>
+              </button>
+              <span data-status-dot="chimes" class="w-2 h-2 rounded-full bg-slate-600"></span>
+            </div>
+            <div class="text-[10px] text-slate-400">Melodic bell drops</div>
+            <input type="range" data-vol-sound="chimes" min="0" max="100" value="50" aria-label="Chimes Volume" />
+          </div>
+
+          <!-- Pad 6: 432Hz Sukoon Drone -->
+          <div data-sound="drone" class="sound-card glass-pill rounded-xl p-2.5 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+              <button type="button" data-toggle-sound="drone" class="flex items-center gap-1.5 text-left font-semibold text-xs text-slate-100 flex-1">
+                <span class="text-base">🕉️</span>
+                <span>Deep Sukoon</span>
+              </button>
+              <span data-status-dot="drone" class="w-2 h-2 rounded-full bg-slate-600"></span>
+            </div>
+            <div class="text-[10px] text-slate-400">Warm sub-bass hum</div>
+            <input type="range" data-vol-sound="drone" min="0" max="100" value="40" aria-label="Drone Volume" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Dil Ki Baat (Shayari, Sky Release & Breathing Toggle) -->
+      <div class="lg:col-span-5 glass-panel rounded-2xl p-3.5 flex flex-col justify-between gap-2.5">
+        <!-- Tab Switcher -->
+        <div class="flex items-center justify-between border-b border-white/10 pb-2 gap-1">
+          <div class="flex items-center gap-1">
+            <button type="button" data-tab="shayari" class="tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+              💌 Shayari &amp; Khayal
+            </button>
+            <button type="button" data-tab="release" class="tab-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white">
+              🌠 Sky Wish
+            </button>
+            <button type="button" data-tab="saved" class="tab-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white">
+              ❤️ Saved (<span id="savedCountBadge">0</span>)
+            </button>
+          </div>
+
+          <button id="toggleBreathBtn" type="button" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 text-cyan-200 text-xs font-medium transition">
+            🧘 Saans Lo
+          </button>
+        </div>
+
+        <!-- Tab 1: Shayari & Vibe Deck -->
+        <div id="tabPanelShayari" class="flex-1 flex flex-col justify-between gap-2">
+          <div class="bg-slate-950/55 rounded-xl p-3 border border-white/10 relative">
+            <div class="flex items-center justify-between mb-1">
+              <span id="shayariTag" class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-semibold">
+                Sukoon • Late Night
+              </span>
+              <span id="shayariIndexLabel" class="text-[10px] text-slate-400">1 / 10</span>
+            </div>
+            <p id="shayariLines" class="text-xs sm:text-sm font-medium text-amber-100/95 leading-relaxed italic">
+              "Kuch toh baat hai iss khamosh raat ki, bina kahe bhi dil ki har baat samajh leti hai."
+            </p>
+            <p id="shayariMeaning" class="text-[11px] text-slate-400 mt-1">
+              ✨ Take a sip, breathe out the rush, and let this moment just be yours.
+            </p>
+          </div>
+
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5">
+              <button id="nextShayariBtn" type="button" class="glass-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-200 flex items-center gap-1">
+                <span>🎲</span> Naya Khayal
+              </button>
+              <button id="beamShayariBtn" type="button" class="glass-pill px-2.5 py-1.5 rounded-xl text-xs text-purple-200" title="Float these words into the starry sky">
+                ✨ Sky Mein Bhejo
+              </button>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button id="favShayariBtn" type="button" class="glass-pill px-2.5 py-1.5 rounded-xl text-xs text-rose-300" title="Save to favorites">
+                <span id="favHeartIcon">🤍</span>
+              </button>
+              <button id="copyShayariBtn" type="button" class="glass-pill px-2.5 py-1.5 rounded-xl text-xs text-slate-200" title="Copy to clipboard">
+                📋 Copy
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Sky Wish / Dil Halka Karo (Release into Stars) -->
+        <div id="tabPanelRelease" class="hidden flex-1 flex-col justify-between gap-2">
+          <p class="text-[11px] text-slate-300">
+            Mann mein koi khwaish, fikar, ya yaad hai? Yahan likho aur aasman ke sitaron mein udao:
+          </p>
+          <div class="flex gap-2">
+            <input id="skyWishInput" type="text" maxlength="80" placeholder="Likho jo dil mein hai... (e.g., Aaj sukoon chahiye)" class="flex-1 bg-slate-950/70 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-400" />
+            <button id="sendSkyWishBtn" type="button" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-purple-500 text-slate-950 font-semibold text-xs whitespace-nowrap hover:brightness-110 transition">
+              🚀 Udao
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-1.5 pt-0.5">
+            <button type="button" data-quickwish="Sab theek ho jayega ✨" class="quick-wish-btn text-[10px] px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10">
+              "Sab theek ho jayega ✨"
+            </button>
+            <button type="button" data-quickwish="Aaj ki raat sirf sukoon 🌙" class="quick-wish-btn text-[10px] px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10">
+              "Aaj ki raat sirf sukoon 🌙"
+            </button>
+            <button type="button" data-quickwish="Dil khush hai ❤️" class="quick-wish-btn text-[10px] px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10">
+              "Dil khush hai ❤️"
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab 3: Saved Favorites List -->
+        <div id="tabPanelSaved" class="hidden flex-1 flex-col justify-between gap-2 max-h-36 overflow-y-auto pr-1">
+          <div id="savedListContainer" class="flex flex-col gap-1.5 text-xs text-slate-300">
+            <p class="text-slate-400 text-xs py-4 text-center">Abhi tak koi shayari save nahi ki. 🤍 daba kar save karein!</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. CURATED DATA: SHAYARI, PALETTES, AND PRESETS
+    // =========================================================================
+    const SHAYARI_COLLECTION = [
+      {
+        id: 's1',
+        tag: 'Sukoon • Late Night',
+        lines: '"Kuch toh baat hai iss khamosh raat ki, bina kahe bhi dil ki har baat samajh leti hai."',
+        meaning: '✨ Take a deep breath, let go of today’s rush, and let this quiet moment be yours.'
+      },
+      {
+        id: 's2',
+        tag: 'Chai & Baarish',
+        lines: '"Ek pyali garma-garam chai aur khidki pe baarish ki boondein—zindagi ke sabse haseen lamhe aksar chhote hote hain."',
+        meaning: '☕ Small comforts are where the heart truly feels at home.'
+      },
+      {
+        id: 's3',
+        tag: 'Safar • Dreams',
+        lines: '"Manzilon ki fikar chhod kar kabhi raaste se bhi mohabbat karke dekho, safar khud manzil ban jayega."',
+        meaning: '🌌 You don’t have to figure everything out tonight; just enjoy how far you’ve come.'
+      },
+      {
+        id: 's4',
+        tag: 'Khwaab • Starlight',
+        lines: '"Jo sitare toot kar bhi aasman ko roshan kar jaate hain, woh sikhate hain ki har badlaav adhoora nahi hota."',
+        meaning: '🌠 Click anywhere on the night sky to launch a shooting star of your own.'
+      },
+      {
+        id: 's5',
+        tag: 'Muskaan • Dil Se',
+        lines: '"Thoda sa waqt apne naam bhi likha karo, duniya ki bheed mein khud se milna sabse zaroori hai."',
+        meaning: '💛 Give yourself permission to unwind without any guilt.'
+      },
+      {
+        id: 's6',
+        tag: 'Mehfil • Lo-Fi Vibe',
+        lines: '"Halki si dhun, thandi hawa, aur befikar khayal—dil ko behlane ke liye itna hi kaafi hai."',
+        meaning: '🎶 Mix the rain and chimes together for the ultimate midnight vibe.'
+      },
+      {
+        id: 's7',
+        tag: 'Umeed • New Dawn',
+        lines: '"Raat jitni gehri hoti hai, sitare utne hi saaf chamakte hain; hausla rakh, subah zaroor aayegi."',
+        meaning: '🌅 Even the longest night is just preparing a brighter sky.'
+      },
+      {
+        id: 's8',
+        tag: 'Khamoshi • Peace',
+        lines: '"Shor se door ek aisi jagah, jahan sirf dhadkan aur sukoon ki guftagu ho."',
+        meaning: '🪷 Try the "Saans Lo" breathing pacer whenever your mind feels crowded.'
+      }
+    ];
+
+    const COLOR_PALETTES = [
+      {
+        name: 'Sunset Chai',
+        bgTop: '#080915',
+        bgBottom: '#1c1226',
+        colors: ['#fbbf24', '#f472b6', '#c084fc', '#38bdf8', '#fde68a']
+      },
+      {
+        name: 'Monsoon Neon',
+        bgTop: '#040d1a',
+        bgBottom: '#0f172a',
+        colors: ['#22d3ee', '#818cf8', '#f472b6', '#34d399', '#a5b4fc']
+      },
+      {
+        name: 'Pahadi Pine',
+        bgTop: '#051414',
+        bgBottom: '#0d2622',
+        colors: ['#34d399', '#a7f3d0', '#fbbf24', '#2dd4bf', '#6ee7b7']
+      },
+      {
+        name: 'Gulabi Dusk',
+        bgTop: '#16071c',
+        bgBottom: '#2d122b',
+        colors: ['#fb7185', '#f472b6', '#fdba74', '#e879f9', '#fecdd3']
+      }
+    ];
+
+    const MOOD_PRESETS = {
+      chai_baarish: {
+        label: 'Chai & Baarish',
+        title: 'Raat Ki Chai & Lo-Fi',
+        visMode: 'ripples',
+        paletteIdx: 0,
+        prompt: 'Khidki par baarish ki boondein — sky par click karke pani ki lehrein aur sur banao!',
+        sounds: { rain: true, chords: true, crackle: true, wind: false, chimes: false, drone: false },
+        volumes: { rain: 68, chords: 56, crackle: 48, wind: 40, chimes: 45, drone: 35 }
+      },
+      pahadi_raat: {
+        label: 'Pahadi Starlight',
+        title: 'Kasol Starry Sky',
+        visMode: 'nebula',
+        paletteIdx: 2,
+        prompt: 'Pahadon ki thandi hawa aur sitare — cursor ghumao aur sitaron ko apne paas bulao!',
+        sounds: { rain: false, chords: true, crackle: false, wind: true, chimes: true, drone: false },
+        volumes: { rain: 45, chords: 50, crackle: 35, wind: 62, chimes: 58, drone: 40 }
+      },
+      mumbai_drive: {
+        label: 'Marine Drive 2AM',
+        title: 'Marine Drive Neon Drift',
+        visMode: 'aurora',
+        paletteIdx: 1,
+        prompt: 'Marine Drive ki 2 AM lehrein — neon silk waves ke saath apna mood flow hone do!',
+        sounds: { rain: true, chords: true, crackle: false, wind: false, chimes: false, drone: true },
+        volumes: { rain: 40, chords: 72, crackle: 30, wind: 35, chimes: 40, drone: 55 }
+      },
+      zen_sukoon: {
+        label: 'Sukoon Ripples',
+        title: '432Hz Sukoon & Jugnu',
+        visMode: 'fireflies',
+        paletteIdx: 3,
+        prompt: 'Jugnuon ka bagicha — dheere se saans lo aur har click par meethi Jal Tarang suno!',
+        sounds: { rain: false, chords: false, crackle: false, wind: true, chimes: true, drone: true },
+        volumes: { rain: 30, chords: 40, crackle: 30, wind: 45, chimes: 65, drone: 60 }
+      }
+    };
+
+    // Pentatonic frequencies (C Major / A Minor Pentatonic tuned around warm register)
+    const CHIME_FREQS = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99];
+
+    // =========================================================================
+    // 2. APPLICATION STATE
+    // =========================================================================
+    const state = {
+      isPlayingAudio: false,
+      masterVolume: 0.75,
+      touchChimesEnabled: true,
+      visMode: 'nebula', // 'nebula' | 'aurora' | 'ripples' | 'fireflies'
+      paletteIdx: 0,
+      particleCount: 95,
+      flowSpeed: 1.0,
+      zenHidden: false,
+      shayariIdx: 0,
+      savedIds: [],
+      breathingOpen: false,
+      breathPattern: 'box', // 'box' (4-4-4-4) | 'relax' (4-7-8)
+      sounds: {
+        rain: { active: true, volume: 0.65 },
+        chords: { active: true, volume: 0.55 },
+        crackle: { active: true, volume: 0.45 },
+        wind: { active: false, volume: 0.50 },
+        chimes: { active: false, volume: 0.50 },
+        drone: { active: false, volume: 0.40 }
+      }
+    };
+
+    // Load saved favorites safely
+    try {
+      const raw = localStorage.getItem('dilkash_saved_shayari');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) state.savedIds = parsed;
+      }
+    } catch (e) {
+      // Ignore storage error in sandboxed contexts
+    }
+
+    function saveFavoritesToStorage() {
+      try {
+        localStorage.setItem('dilkash_saved_shayari', JSON.stringify(state.savedIds));
+      } catch (e) {
+        // Ignore storage error
+      }
+    }
+
+    // =========================================================================
+    // 3. TOAST HELPER
+    // =========================================================================
+    let toastTimer = null;
+    function showToast(message, icon = '✨') {
+      const box = document.getElementById('toastBox');
+      const textEl = document.getElementById('toastText');
+      const iconEl = document.getElementById('toastIcon');
+      if (!box || !textEl || !iconEl) return;
+      iconEl.textContent = icon;
+      textEl.textContent = message;
+      box.classList.remove('opacity-0', 'translate-y-[-10px]');
+      box.classList.add('opacity-100', 'translate-y-0');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.add('opacity-0', 'translate-y-[-10px]');
+        box.classList.remove('opacity-100', 'translate-y-0');
+      }, 2400);
+    }
+
+    // =========================================================================
+    // 4. WEB AUDIO API PROCEDURAL LO-FI & AMBIENT SYNTHESIZER
+    // =========================================================================
+    let audioCtx = null;
+    let masterGain = null;
+    const channelNodes = {};
+    let chordIntervalId = null;
+    let chimeIntervalId = null;
+    let crackleIntervalId = null;
+
+    function initAudioEngine() {
+      if (audioCtx) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      audioCtx = new AudioContextClass();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = state.masterVolume;
+      masterGain.connect(audioCtx.destination);
+
+      // Build shared noise buffer (3 seconds of smooth stereo noise)
+      const sampleRate = audioCtx.sampleRate;
+      const bufferLength = sampleRate * 3;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferLength, sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const white = Math.random() * 2 - 1;
+        // Pink noise approximation for warm natural rain & wind
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        b3 = 0.86650 * b3 + white * 0.3104856;
+        b4 = 0.55000 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.0168980;
+        output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.04;
+        b6 = white * 0.115926;
+      }
+
+      // 1) BAARISH (Soft Rain)
+      const rainSource = audioCtx.createBufferSource();
+      rainSource.buffer = noiseBuffer;
+      rainSource.loop = true;
+      const rainFilter = audioCtx.createBiquadFilter();
+      rainFilter.type = 'bandpass';
+      rainFilter.frequency.value = 1100;
+      rainFilter.Q.value = 0.65;
+      const rainGain = audioCtx.createGain();
+      rainGain.gain.value = 0;
+      rainSource.connect(rainFilter);
+      rainFilter.connect(rainGain);
+      rainGain.connect(masterGain);
+      rainSource.start(0);
+      channelNodes.rain = { gainNode: rainGain, baseMultiplier: 0.95 };
+
+      // 2) THANDI HAWA (Modulated Midnight Breeze)
+      const windSource = audioCtx.createBufferSource();
+      windSource.buffer = noiseBuffer;
+      windSource.loop = true;
+      const windFilter = audioCtx.createBiquadFilter();
+      windFilter.type = 'lowpass';
+      windFilter.frequency.value = 340;
+      windFilter.Q.value = 2.8;
+      // LFO to sweep wind filter gently
+      const windLfo = audioCtx.createOscillator();
+      windLfo.type = 'sine';
+      windLfo.frequency.value = 0.14;
+      const windLfoGain = audioCtx.createGain();
+      windLfoGain.gain.value = 180;
+      windLfo.connect(windLfoGain);
+      windLfoGain.connect(windFilter.frequency);
+      windLfo.start(0);
+
+      const windGain = audioCtx.createGain();
+      windGain.gain.value = 0;
+      windSource.connect(windFilter);
+      windFilter.connect(windGain);
+      windGain.connect(masterGain);
+      windSource.start(0);
+      channelNodes.wind = { gainNode: windGain, baseMultiplier: 1.1 };
+
+      // 3) WARM CRACKLE (Vinyl & Cozy Hearth)
+      const crackleGain = audioCtx.createGain();
+      crackleGain.gain.value = 0;
+      crackleGain.connect(masterGain);
+      channelNodes.crackle = { gainNode: crackleGain, baseMultiplier: 0.7 };
+
+      // 4) LO-FI DREAMY CHORDS
+      const chordsGain = audioCtx.createGain();
+      chordsGain.gain.value = 0;
+      chordsGain.connect(masterGain);
+      channelNodes.chords = { gainNode: chordsGain, baseMultiplier: 0.35 };
+
+      // 5) JAL TARANG CHIMES
+      const chimesGain = audioCtx.createGain();
+      chimesGain.gain.value = 0;
+      chimesGain.connect(masterGain);
+      channelNodes.chimes = { gainNode: chimesGain, baseMultiplier: 0.55 };
+
+      // 6) DEEP SUKOON DRONE (Warm 108Hz + 216Hz harmonic drone)
+      const droneOsc1 = audioCtx.createOscillator();
+      const droneOsc2 = audioCtx.createOscillator();
+      droneOsc1.type = 'sine';
+      droneOsc2.type = 'triangle';
+      droneOsc1.frequency.value = 108;
+      droneOsc2.frequency.value = 216.4; // Gentle binaural shimmer
+      const droneFilter = audioCtx.createBiquadFilter();
+      droneFilter.type = 'lowpass';
+      droneFilter.frequency.value = 260;
+      const droneGain = audioCtx.createGain();
+      droneGain.gain.value = 0;
+      droneOsc1.connect(droneFilter);
+      droneOsc2.connect(droneFilter);
+      droneFilter.connect(droneGain);
+      droneGain.connect(masterGain);
+      droneOsc1.start(0);
+      droneOsc2.start(0);
+      channelNodes.drone = { gainNode: droneGain, baseMultiplier: 0.28 };
+
+      // Start periodic generators for Chords, Crackle, and Chimes
+      startProceduralLoops();
+      syncAllChannelGains();
+    }
+
+    const LOFI_CHORD_PROGRESSIONS = [
+      [261.63, 329.63, 392.00, 493.88], // Cmaj7
+      [220.00, 261.63, 329.63, 392.00], // Am7
+      [174.61, 220.00, 261.63, 329.63], // Fmaj7
+      [196.00, 246.94, 293.66, 349.23]  // G7
+    ];
+    let currentChordStep = 0;
+
+    function playSingleLofiChord() {
+      if (!audioCtx || !state.isPlayingAudio || !state.sounds.chords.active) return;
+      const now = audioCtx.currentTime;
+      const notes = LOFI_CHORD_PROGRESSIONS[currentChordStep % LOFI_CHORD_PROGRESSIONS.length];
+      currentChordStep++;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(520, now);
+      filter.frequency.exponentialRampToValueAtTime(950, now + 1.8);
+      filter.frequency.exponentialRampToValueAtTime(420, now + 3.8);
+
+      const env = audioCtx.createGain();
+      env.gain.setValueAtTime(0.001, now);
+      env.gain.linearRampToValueAtTime(0.22, now + 0.65);
+      env.gain.exponentialRampToValueAtTime(0.001, now + 3.9);
+
+      filter.connect(env);
+      env.connect(channelNodes.chords.gainNode);
+
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        osc.type = idx % 2 === 0 ? 'triangle' : 'sine';
+        // Slight warm tape detune
+        osc.frequency.setValueAtTime(freq + (Math.random() - 0.5) * 1.2, now);
+        osc.connect(filter);
+        osc.start(now + idx * 0.04);
+        osc.stop(now + 4.0);
+      });
+    }
+
+    function playJalTarangNote(customFreq = null, isInteractiveTouch = false) {
+      if (!audioCtx || !state.isPlayingAudio) return;
+      if (!isInteractiveTouch && !state.sounds.chimes.active) return;
+      if (isInteractiveTouch && !state.touchChimesEnabled) return;
+
+      const now = audioCtx.currentTime;
+      const freq = customFreq || CHIME_FREQS[Math.floor(Math.random() * CHIME_FREQS.length)];
+
+      const osc = audioCtx.createOscillator();
+      const harmonic = audioCtx.createOscillator();
+      osc.type = 'sine';
+      harmonic.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      harmonic.frequency.setValueAtTime(freq * 2.0, now);
+
+      const env = audioCtx.createGain();
+      const peakGain = isInteractiveTouch ? 0.16 : 0.22;
+      env.gain.setValueAtTime(0.001, now);
+      env.gain.linearRampToValueAtTime(peakGain, now + 0.02);
+      env.gain.exponentialRampToValueAtTime(0.0008, now + 2.1);
+
+      const harmGain = audioCtx.createGain();
+      harmGain.gain.setValueAtTime(0.04, now);
+      harmGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.6);
+
+      osc.connect(env);
+      harmonic.connect(harmGain);
+      harmGain.connect(env);
+
+      if (isInteractiveTouch) {
+        env.connect(masterGain);
+      } else if (channelNodes.chimes) {
+        env.connect(channelNodes.chimes.gainNode);
+      }
+
+      osc.start(now);
+      harmonic.start(now);
+      osc.stop(now + 2.2);
+      harmonic.stop(now + 2.2);
+    }
+
+    function triggerCracklePop() {
+      if (!audioCtx || !state.isPlayingAudio || !state.sounds.crackle.active) return;
+      if (Math.random() > 0.62) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(1600 + Math.random() * 2600, now);
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 2400;
+
+      const env = audioCtx.createGain();
+      const amp = 0.03 + Math.random() * 0.07;
+      env.gain.setValueAtTime(amp, now);
+      env.gain.exponentialRampToValueAtTime(0.0008, now + 0.018);
+
+      osc.connect(filter);
+      filter.connect(env);
+      env.connect(channelNodes.crackle.gainNode);
+
+      osc.start(now);
+      osc.stop(now + 0.02);
+    }
+
+    function startProceduralLoops() {
+      if (chordIntervalId) clearInterval(chordIntervalId);
+      if (chimeIntervalId) clearInterval(chimeIntervalId);
+      if (crackleIntervalId) clearInterval(crackleIntervalId);
+
+      playSingleLofiChord();
+      chordIntervalId = setInterval(playSingleLofiChord, 4000);
+      chimeIntervalId = setInterval(() => {
+        if (Math.random() < 0.72) playJalTarangNote(null, false);
+      }, 1700);
+      crackleIntervalId = setInterval(triggerCracklePop, 110);
+    }
+
+    function syncAllChannelGains() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      if (masterGain) {
+        masterGain.gain.setTargetAtTime(state.isPlayingAudio ? state.masterVolume : 0, now, 0.08);
+      }
+      Object.keys(state.sounds).forEach((key) => {
+        const nodeInfo = channelNodes[key];
+        const cfg = state.sounds[key];
+        if (nodeInfo && nodeInfo.gainNode) {
+          const target = (state.isPlayingAudio && cfg.active)
+            ? cfg.volume * nodeInfo.baseMultiplier
+            : 0;
+          nodeInfo.gainNode.gain.setTargetAtTime(target, now, 0.12);
+        }
+      });
+      updateSoundUI();
+    }
+
+    function toggleMasterAudio(forcePlay = null) {
+      initAudioEngine();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      state.isPlayingAudio = forcePlay !== null ? forcePlay : !state.isPlayingAudio;
+      syncAllChannelGains();
+      if (state.isPlayingAudio) {
+        playSingleLofiChord();
+      }
+    }
+
+    function updateSoundUI() {
+      const playBtn = document.getElementById('masterPlayBtn');
+      const playIcon = document.getElementById('masterPlayIcon');
+      const playLabel = document.getElementById('masterPlayLabel');
+      const eqContainer = document.getElementById('eqContainer');
+      const vinylBadge = document.getElementById('vinylBadge');
+
+      if (state.isPlayingAudio) {
+        playIcon.textContent = '⏸';
+        playLabel.textContent = 'Vibe Playing';
+        eqContainer.classList.add('playing');
+        vinylBadge.classList.add('playing');
+        playBtn.classList.add('ring-2', 'ring-amber-300/60');
+      } else {
+        playIcon.textContent = '▶';
+        playLabel.textContent = 'Start Vibe Audio';
+        eqContainer.classList.remove('playing');
+        vinylBadge.classList.remove('playing');
+        playBtn.classList.remove('ring-2', 'ring-amber-300/60');
+      }
+
+      let activeCount = 0;
+      Object.keys(state.sounds).forEach((key) => {
+        const isActive = state.sounds[key].active;
+        if (isActive) activeCount++;
+        const card = document.querySelector(`.sound-card[data-sound="${key}"]`);
+        const dot = document.querySelector(`[data-status-dot="${key}"]`);
+        const slider = document.querySelector(`input[data-vol-sound="${key}"]`);
+        if (card) {
+          card.classList.toggle('active', isActive);
+        }
+        if (dot) {
+          dot.className = isActive
+            ? 'w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]'
+            : 'w-2 h-2 rounded-full bg-slate-600';
+        }
+        if (slider) {
+          slider.value = Math.round(state.sounds[key].volume * 100);
+        }
+      });
+
+      const summaryEl = document.getElementById('activeChannelsSummary');
+      if (summaryEl) {
+        summaryEl.textContent = `${activeCount} sound${activeCount === 1 ? '' : 's'} active • ${state.isPlayingAudio ? 'Live' : 'Paused'}`;
+      }
+    }
+
+    // =========================================================================
+    // 5. INTERACTIVE CANVAS PARTICLE, AURORA, RIPPLE & SKY WISH ENGINE
+    // =========================================================================
+    const canvas = document.getElementById('vibeCanvas');
+    const ctx = canvas.getContext('2d');
+    let cw = window.innerWidth;
+    let ch = window.innerHeight;
+
+    const pointer = {
+      x: cw / 2,
+      y: ch / 2,
+      active: false,
+      isDown: false,
+      lastChimeTime: 0
+    };
+
+    let particles = [];
+    let ripples = [];
+    let sparks = [];
+    let floatingWishes = [];
+    let animFrameId = null;
+    let timeTick = 0;
+
+    function resizeCanvas() {
+      cw = window.innerWidth;
+      ch = window.innerHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+      if (particles.length === 0) {
+        rebuildParticles();
+      }
+    }
+
+    function getActivePalette() {
+      return COLOR_PALETTES[state.paletteIdx % COLOR_PALETTES.length];
+    }
+
+    function createParticle() {
+      const pal = getActivePalette();
+      const color = pal.colors[Math.floor(Math.random() * pal.colors.length)];
+      return {
+        x: Math.random() * cw,
+        y: Math.random() * ch,
+        vx: (Math.random() - 0.5) * 0.9,
+        vy: (Math.random() - 0.5) * 0.9,
+        radius: 1.5 + Math.random() * 2.8,
+        color: color,
+        alpha: 0.35 + Math.random() * 0.6,
+        phase: Math.random() * Math.PI * 2
+      };
+    }
+
+    function rebuildParticles() {
+      const target = state.particleCount;
+      const pal = getActivePalette();
+      while (particles.length < target) {
+        particles.push(createParticle());
+      }
+      if (particles.length > target) {
+        particles.length = target;
+      }
+      particles.forEach((p, i) => {
+        p.color = pal.colors[i % pal.colors.length];
+      });
+    }
+
+    function spawnSparkBurst(x, y, count = 28) {
+      const pal = getActivePalette();
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
+        const speed = 1.4 + Math.random() * 4.2;
+        sparks.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          radius: 1.8 + Math.random() * 2.5,
+          color: pal.colors[Math.floor(Math.random() * pal.colors.length)],
+          life: 1.0,
+          decay: 0.014 + Math.random() * 0.015
+        });
+      }
+      ripples.push({
+        x: x,
+        y: y,
+        radius: 4,
+        maxRadius: 110 + Math.random() * 70,
+        alpha: 0.75,
+        color: pal.colors[Math.floor(Math.random() * pal.colors.length)]
+      });
+    }
+
+    function launchFloatingWish(text) {
+      const pal = getActivePalette();
+      const x = cw * (0.25 + Math.random() * 0.5);
+      const y = ch * 0.78;
+      floatingWishes.push({
+        text: text,
+        x: x,
+        y: y,
+        vy: -0.65 - Math.random() * 0.35,
+        alpha: 1.0,
+        color: pal.colors[0]
+      });
+      spawnSparkBurst(x, y, 32);
+      if (state.isPlayingAudio) {
+        playJalTarangNote(523.25, true);
+        setTimeout(() => playJalTarangNote(659.25, true), 140);
+      }
+    }
+
+    function renderCanvasFrame() {
+      timeTick += 0.016 * state.flowSpeed;
+      const pal = getActivePalette();
+
+      // Background gradient
+      const grad = ctx.createLinearGradient(0, 0, 0, ch);
+      grad.addColorStop(0, pal.bgTop);
+      grad.addColorStop(1, pal.bgBottom);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // Ambient Aurora Ribbons (especially prominent in 'aurora' mode, subtle in others)
+      const waveCount = state.visMode === 'aurora' ? 4 : 2;
+      for (let w = 0; w < waveCount; w++) {
+        ctx.beginPath();
+        const waveColor = pal.colors[w % pal.colors.length];
+        const baseY = ch * (0.3 + w * 0.16);
+        ctx.moveTo(0, baseY);
+        for (let x = 0; x <= cw; x += 40) {
+          const pointerPull = pointer.active
+            ? Math.exp(-Math.pow(x - pointer.x, 2) / 48000) * ((pointer.y - baseY) * 0.32)
+            : 0;
+          const y = baseY
+            + Math.sin(x * 0.004 + timeTick * (0.8 + w * 0.2) + w) * (state.visMode === 'aurora' ? 48 : 20)
+            + Math.cos(x * 0.009 - timeTick * 0.5) * 18
+            + pointerPull;
+          ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = waveColor;
+        ctx.globalAlpha = state.visMode === 'aurora' ? 0.32 : 0.07;
+        ctx.lineWidth = state.visMode === 'aurora' ? 28 : 14;
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // Mode-specific primary particle behavior
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.phase += 0.03 * state.flowSpeed;
+
+        if (state.visMode === 'nebula') {
+          p.x += p.vx * state.flowSpeed;
+          p.y += p.vy * state.flowSpeed;
+          if (pointer.active) {
+            const dx = pointer.x - p.x;
+            const dy = pointer.y - p.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 220 && dist > 5) {
+              p.x += (dx / dist) * 0.85 * state.flowSpeed;
+              p.y += (dy / dist) * 0.85 * state.flowSpeed;
+            }
+          }
+        } else if (state.visMode === 'aurora') {
+          p.x += (1.1 + Math.sin(p.phase) * 0.4) * state.flowSpeed;
+          p.y += Math.cos(p.phase + p.x * 0.005) * 0.7 * state.flowSpeed;
+        } else if (state.visMode === 'ripples') {
+          p.y += (1.6 + p.radius * 0.4) * state.flowSpeed;
+          p.x += Math.sin(timeTick + i) * 0.3;
+          if (p.y > ch - 20 && Math.random() < 0.04) {
+            ripples.push({
+              x: p.x,
+              y: ch * (0.55 + Math.random() * 0.4),
+              radius: 2,
+              maxRadius: 45 + Math.random() * 35,
+              alpha: 0.45,
+              color: p.color
+            });
+            p.y = -10;
+          }
+        } else if (state.visMode === 'fireflies') {
+          p.x += Math.sin(p.phase * 0.7 + i) * 0.85 * state.flowSpeed;
+          p.y -= (0.35 + Math.cos(p.phase) * 0.25) * state.flowSpeed;
+          if (pointer.active) {
+            const dx = pointer.x - p.x;
+            const dy = pointer.y - p.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 180 && dist > 10) {
+              p.x += (dx / dist) * 0.6;
+              p.y += (dy / dist) * 0.6;
+            }
+          }
+        }
+
+        // Wrap screen boundaries
+        if (p.x < -10) p.x = cw + 10;
+        if (p.x > cw + 10) p.x = -10;
+        if (p.y < -10) p.y = ch + 10;
+        if (p.y > ch + 10) p.y = -10;
+
+        // Draw Particle
+        const twinkle = 0.55 + 0.45 * Math.sin(p.phase * 1.5);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius * (state.visMode === 'fireflies' ? 1.35 : 1), 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha * twinkle;
+        ctx.fill();
+
+        // Constellation lines in Nebula mode
+        if (state.visMode === 'nebula') {
+          for (let j = i + 1; j < particles.length; j += 2) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const distSq = dx * dx + dy * dy;
+            if (distSq < 9500) {
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.strokeStyle = p.color;
+              ctx.globalAlpha = (1 - distSq / 9500) * 0.18;
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // Draw & update water/sky ripples
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i];
+        r.radius += (1.6 + r.radius * 0.02) * Math.max(0.7, state.flowSpeed * 0.8);
+        r.alpha *= 0.965;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = r.color;
+        ctx.globalAlpha = r.alpha;
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+        if (r.alpha < 0.02 || r.radius > r.maxRadius) {
+          ripples.splice(i, 1);
+        }
+      }
+
+      // Draw & update spark bursts
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const s = sparks[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.vy += 0.03; // gentle gravity
+        s.life -= s.decay;
+        if (s.life <= 0) {
+          sparks.splice(i, 1);
+          continue;
+        }
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius * s.life, 0, Math.PI * 2);
+        ctx.fillStyle = s.color;
+        ctx.globalAlpha = s.life;
+        ctx.fill();
+      }
+
+      // Draw & update floating sky wishes
+      for (let i = floatingWishes.length - 1; i >= 0; i--) {
+        const w = floatingWishes[i];
+        w.y += w.vy;
+        w.x += Math.sin(timeTick + i) * 0.35;
+        w.alpha -= 0.0022;
+        if (w.alpha <= 0 || w.y < -40) {
+          floatingWishes.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.font = '600 14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fef3c7';
+        ctx.shadowColor = w.color;
+        ctx.shadowBlur = 12;
+        ctx.globalAlpha = Math.min(1, w.alpha * 1.2);
+        ctx.fillText(`✨ ${w.text} ✨`, w.x, w.y);
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = 1;
+      animFrameId = requestAnimationFrame(renderCanvasFrame);
+    }
+
+    function handleCanvasInteract(clientX, clientY, isClick = false) {
+      pointer.x = clientX;
+      pointer.y = clientY;
+      pointer.active = true;
+
+      const now = performance.now();
+      if (isClick) {
+        spawnSparkBurst(clientX, clientY, 24);
+        // Map vertical screen position to pentatonic chime pitch
+        const ratio = 1 - Math.max(0, Math.min(1, clientY / ch));
+        const idx = Math.floor(ratio * (CHIME_FREQS.length - 1));
+        if (!state.isPlayingAudio && state.touchChimesEnabled) {
+          // Gently initialize audio on canvas tap if user hasn't started yet
+          initAudioEngine();
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        if (audioCtx && state.touchChimesEnabled) {
+          // Play chime even if master ambient loop isn't running yet, or when running
+          const prevPlay = state.isPlayingAudio;
+          state.isPlayingAudio = true;
+          playJalTarangNote(CHIME_FREQS[idx], true);
+          state.isPlayingAudio = prevPlay;
+        }
+      } else if (pointer.isDown && now - pointer.lastChimeTime > 160) {
+        pointer.lastChimeTime = now;
+        spawnSparkBurst(clientX, clientY, 8);
+        const ratio = 1 - Math.max(0, Math.min(1, clientY / ch));
+        const idx = Math.floor(ratio * (CHIME_FREQS.length - 1));
+        if (audioCtx && state.touchChimesEnabled) {
+          const prevPlay = state.isPlayingAudio;
+          state.isPlayingAudio = true;
+          playJalTarangNote(CHIME_FREQS[idx], true);
+          state.isPlayingAudio = prevPlay;
+        }
+      }
+    }
+
+    // =========================================================================
+    // 6. SHAYARI, TABS & FAVORITES LOGIC
+    // =========================================================================
+    function renderCurrentShayari() {
+      const item = SHAYARI_COLLECTION[state.shayariIdx % SHAYARI_COLLECTION.length];
+      document.getElementById('shayariTag').textContent = item.tag;
+      document.getElementById('shayariIndexLabel').textContent = `${(state.shayariIdx % SHAYARI_COLLECTION.length) + 1} / ${SHAYARI_COLLECTION.length}`;
+      document.getElementById('shayariLines').textContent = item.lines;
+      document.getElementById('shayariMeaning').textContent = item.meaning;
+
+      const isSaved = state.savedIds.includes(item.id);
+      document.getElementById('favHeartIcon').textContent = isSaved ? '❤️' : '🤍';
+      document.getElementById('savedCountBadge').textContent = String(state.savedIds.length);
+      renderSavedShayariList();
+    }
+
+    function renderSavedShayariList() {
+      const container = document.getElementById('savedListContainer');
+      if (!container) return;
+      if (state.savedIds.length === 0) {
+        container.innerHTML = '<p class="text-slate-400 text-xs py-4 text-center">Abhi tak koi shayari save nahi ki. 🤍 daba kar save karein!</p>';
+        return;
+      }
+      container.innerHTML = '';
+      state.savedIds.forEach((id) => {
+        const item = SHAYARI_COLLECTION.find((s) => s.id === id);
+        if (!item) return;
+        const row = document.createElement('div');
+        row.className = 'bg-slate-950/60 border border-white/10 rounded-xl p-2 flex items-start justify-between gap-2';
+        const textSpan = document.createElement('p');
+        textSpan.className = 'text-[11px] text-amber-100 italic leading-snug';
+        textSpan.textContent = item.lines;
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'text-xs text-slate-400 hover:text-rose-400 px-1 shrink-0';
+        delBtn.textContent = '✕';
+        delBtn.addEventListener('click', () => {
+          state.savedIds = state.savedIds.filter((savedId) => savedId !== id);
+          saveFavoritesToStorage();
+          renderCurrentShayari();
+          showToast('Removed from saved list', '🗑️');
+        });
+
+        row.appendChild(textSpan);
+        row.appendChild(delBtn);
+        container.appendChild(row);
+      });
+    }
+
+    function copyTextSafe(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Shayari copied to clipboard!', '📋');
+        }).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Shayari copied to clipboard!', '📋');
+      } catch (e) {
+        showToast('Ready to copy!', '✨');
+      }
+      document.body.removeChild(ta);
+    }
+
+    // =========================================================================
+    // 7. GUIDED BREATHING PACER ("SAANS LO")
+    // =========================================================================
+    let breathIntervalId = null;
+    let breathStepSec = 0;
+    let breathPhaseIdx = 0;
+
+    const BREATH_PATTERNS = {
+      box: [
+        { label: 'Saans Andar', sec: 4, scale: 'scale-110', hint: 'Dheere se naak se saans andar lein...' },
+        { label: 'Roko (Hold)', sec: 4, scale: 'scale-110', hint: 'Thoda thehrein, sukoon mehsoos karein...' },
+        { label: 'Dheere Chhodo', sec: 4, scale: 'scale-75', hint: 'Saari thakaan saans ke saath bahar chhodein...' },
+        { label: 'Shant Raho', sec: 4, scale: 'scale-75', hint: 'Agli saans ke liye taiyaar...' }
+      ],
+      relax: [
+        { label: 'Saans Andar', sec: 4, scale: 'scale-110', hint: '4 second tak gehri saans andar lein...' },
+        { label: 'Roko (Hold)', sec: 7, scale: 'scale-110', hint: '7 second tak saans ko shanti se rokein...' },
+        { label: 'Lambi Saans Chhodo', sec: 8, scale: 'scale-75', hint: '8 second tak dheere-dheere saans chhodein...' }
+      ]
+    };
+
+    function startBreathingCycle() {
+      if (breathIntervalId) clearInterval(breathIntervalId);
+      breathPhaseIdx = 0;
+      const phases = BREATH_PATTERNS[state.breathPattern];
+      breathStepSec = phases[0].sec;
+      updateBreathingUI();
+
+      breathIntervalId = setInterval(() => {
+        if (!state.breathingOpen) return;
+        breathStepSec--;
+        if (breathStepSec <= 0) {
+          breathPhaseIdx = (breathPhaseIdx + 1) % phases.length;
+          breathStepSec = phases[breathPhaseIdx].sec;
+          if (state.isPlayingAudio && state.touchChimesEnabled) {
+            playJalTarangNote(breathPhaseIdx === 0 ? 392.0 : 293.66, true);
+          }
+        }
+        updateBreathingUI();
+      }, 1000);
+    }
+
+    function updateBreathingUI() {
+      const phases = BREATH_PATTERNS[state.breathPattern];
+      const current = phases[breathPhaseIdx % phases.length];
+      const orb = document.getElementById('breathOrbOuter');
+      const phaseEl = document.getElementById('breathPhaseText');
+      const timerEl = document.getElementById('breathTimerText');
+      const hintEl = document.getElementById('breathSubHint');
+      if (!orb || !phaseEl || !timerEl || !hintEl) return;
+
+      phaseEl.textContent = current.label;
+      timerEl.textContent = `${breathStepSec}s`;
+      hintEl.textContent = current.hint;
+      orb.classList.remove('scale-75', 'scale-110');
+      orb.classList.add(current.scale);
+    }
+
+    // =========================================================================
+    // 8. PRESETS & UI EVENT BINDINGS
+    // =========================================================================
+    function applyMoodPreset(presetKey, autoPlay = true) {
+      const preset = MOOD_PRESETS[presetKey];
+      if (!preset) return;
+
+      // Update visual mode & palette
+      state.visMode = preset.visMode;
+      state.paletteIdx = preset.paletteIdx;
+      rebuildParticles();
+
+      document.getElementById('liveMoodBadge').textContent = preset.label;
+      document.getElementById('nowPlayingTitle').textContent = preset.title;
+      document.getElementById('paletteNameLabel').textContent = getActivePalette().name;
+      document.getElementById('canvasDynamicPrompt').textContent = preset.prompt;
+
+      // Highlight preset button
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-preset') === presetKey);
+      });
+
+      // Highlight vismode button
+      document.querySelectorAll('.vismode-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-vismode') === state.visMode);
+      });
+
+      // Update sound channels
+      Object.keys(preset.sounds).forEach((k) => {
+        state.sounds[k].active = preset.sounds[k];
+        state.sounds[k].volume = (preset.volumes[k] || 50) / 100;
+      });
+
+      if (autoPlay && !state.isPlayingAudio) {
+        toggleMasterAudio(true);
+      } else {
+        syncAllChannelGains();
+      }
+      spawnSparkBurst(cw / 2, ch / 2, 30);
+      showToast(`Switched to "${preset.label}" vibe`, '🎧');
+    }
+
+    window.addEventListener('load', () => {
+      resizeCanvas();
+      rebuildParticles();
+      renderCurrentShayari();
+      updateSoundUI();
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      animFrameId = requestAnimationFrame(renderCanvasFrame);
+
+      window.addEventListener('resize', resizeCanvas);
+
+      // Canvas Mouse & Touch Listeners
+      canvas.addEventListener('mousedown', (e) => {
+        pointer.isDown = true;
+        handleCanvasInteract(e.clientX, e.clientY, true);
+      });
+      window.addEventListener('mousemove', (e) => {
+        pointer.x = e.clientX;
+        pointer.y = e.clientY;
+        pointer.active = true;
+        if (pointer.isDown) {
+          handleCanvasInteract(e.clientX, e.clientY, false);
+        }
+      });
+      window.addEventListener('mouseup', () => {
+        pointer.isDown = false;
+      });
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 0) {
+          pointer.isDown = true;
+          handleCanvasInteract(e.touches[0].clientX, e.touches[0].clientY, true);
+        }
+      }, { passive: true });
+      canvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+          handleCanvasInteract(e.touches[0].clientX, e.touches[0].clientY, false);
+        }
+      }, { passive: true });
+      window.addEventListener('touchend', () => {
+        pointer.isDown = false;
+      });
+
+      // Master Play Button
+      document.getElementById('masterPlayBtn').addEventListener('click', () => {
+        toggleMasterAudio();
+        showToast(state.isPlayingAudio ? 'Lo-Fi & Ambient Audio Started 🎶' : 'Audio Paused ⏸', '🎵');
+      });
+
+      // Pure Canvas / Zen Hide Button
+      document.getElementById('zenHideBtn').addEventListener('click', () => {
+        state.zenHidden = !state.zenHidden;
+        const mainPanels = document.getElementById('mainPanels');
+        const label = document.getElementById('zenHideText');
+        const icon = document.getElementById('zenHideIcon');
+        if (state.zenHidden) {
+          mainPanels.classList.add('opacity-0', 'pointer-events-none');
+          label.textContent = 'Show Controls';
+          icon.textContent = '✨';
+          showToast('Pure Canvas Mode — Click sky to play!', '🌌');
+        } else {
+          mainPanels.classList.remove('opacity-0', 'pointer-events-none');
+          label.textContent = 'Pure Canvas';
+          icon.textContent = '👁️';
+        }
+      });
+
+      // 1-Click Mood Presets
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-preset');
+          applyMoodPreset(key, true);
+        });
+      });
+
+      // Visual Mode Buttons
+      document.querySelectorAll('.vismode-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.visMode = btn.getAttribute('data-vismode');
+          document.querySelectorAll('.vismode-btn').forEach((b) => {
+            b.classList.toggle('active', b === btn);
+          });
+          spawnSparkBurst(cw / 2, ch / 2, 22);
+        });
+      });
+
+      // Spark Burst & Theme Palette Buttons
+      document.getElementById('sparkBurstBtn').addEventListener('click', () => {
+        spawnSparkBurst(cw * (0.25 + Math.random() * 0.5), ch * (0.25 + Math.random() * 0.4), 42);
+        if (state.isPlayingAudio) playJalTarangNote(659.25, true);
+      });
+
+      document.getElementById('paletteCycleBtn').addEventListener('click', () => {
+        state.paletteIdx = (state.paletteIdx + 1) % COLOR_PALETTES.length;
+        const pal = getActivePalette();
+        document.getElementById('paletteNameLabel').textContent = pal.name;
+        rebuildParticles();
+        showToast(`Color Palette: ${pal.name}`, '🎨');
+      });
+
+      // Density & Flow Sliders
+      document.getElementById('densitySlider').addEventListener('input', (e) => {
+        state.particleCount = parseInt(e.target.value, 10) || 90;
+        rebuildParticles();
+      });
+
+      document.getElementById('speedSlider').addEventListener('input', (e) => {
+        state.flowSpeed = (parseInt(e.target.value, 10) || 10) / 10;
+      });
+
+      // Master Volume & Touch Chimes
+      document.getElementById('masterVolSlider').addEventListener('input', (e) => {
+        state.masterVolume = (parseInt(e.target.value, 10) || 0) / 100;
+        syncAllChannelGains();
+      });
+
+      document.getElementById('touchChimesToggle').addEventListener('change', (e) => {
+        state.touchChimesEnabled = e.target.checked;
+        showToast(state.touchChimesEnabled ? 'Touch Chimes Enabled 🎐' : 'Touch Chimes Muted', '🎐');
+      });
+
+      // 6 Individual Sound Pad Toggles & Sliders
+      document.querySelectorAll('[data-toggle-sound]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-toggle-sound');
+          state.sounds[key].active = !state.sounds[key].active;
+          if (state.sounds[key].active && !state.isPlayingAudio) {
+            toggleMasterAudio(true);
+          } else {
+            syncAllChannelGains();
+          }
+        });
+      });
+
+      document.querySelectorAll('input[data-vol-sound]').forEach((slider) => {
+        slider.addEventListener('input', (e) => {
+          const key = slider.getAttribute('data-vol-sound');
+          const val = (parseInt(e.target.value, 10) || 0) / 100;
+          state.sounds[key].volume = val;
+          if (val > 0 && !state.sounds[key].active) {
+            state.sounds[key].active = true;
+          }
+          syncAllChannelGains();
+        });
+      });
+
+      // Right Panel Tabs (Shayari / Sky Wish / Saved)
+      const tabPanels = {
+        shayari: document.getElementById('tabPanelShayari'),
+        release: document.getElementById('tabPanelRelease'),
+        saved: document.getElementById('tabPanelSaved')
+      };
+
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-tab');
+          document.querySelectorAll('.tab-btn').forEach((b) => {
+            const active = b === btn;
+            b.className = active
+              ? 'tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30'
+              : 'tab-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white';
+          });
+          Object.keys(tabPanels).forEach((k) => {
+            if (k === target) {
+              tabPanels[k].classList.remove('hidden');
+              tabPanels[k].classList.add('flex');
+            } else {
+              tabPanels[k].classList.add('hidden');
+              tabPanels[k].classList.remove('flex');
+            }
+          });
+        });
+      });
+
+      // Shayari Controls
+      document.getElementById('nextShayariBtn').addEventListener('click', () => {
+        state.shayariIdx = (state.shayariIdx + 1) % SHAYARI_COLLECTION.length;
+        renderCurrentShayari();
+        if (state.isPlayingAudio && state.touchChimesEnabled) {
+          playJalTarangNote(null, true);
+        }
+      });
+
+      document.getElementById('beamShayariBtn').addEventListener('click', () => {
+        const item = SHAYARI_COLLECTION[state.shayariIdx % SHAYARI_COLLECTION.length];
+        const shortSnippet = item.lines.replace(/"/g, '').slice(0, 46) + '...';
+        launchFloatingWish(shortSnippet);
+        showToast('Khayal sitaron mein bhej diya gaya ✨', '🌠');
+      });
+
+      document.getElementById('favShayariBtn').addEventListener('click', () => {
+        const item = SHAYARI_COLLECTION[state.shayariIdx % SHAYARI_COLLECTION.length];
+        if (state.savedIds.includes(item.id)) {
+          state.savedIds = state.savedIds.filter((id) => id !== item.id);
+          showToast('Removed from Saved', '🤍');
+        } else {
+          state.savedIds.push(item.id);
+          showToast('Saved to Favorites ❤️', '❤️');
+        }
+        saveFavoritesToStorage();
+        renderCurrentShayari();
+      });
+
+      document.getElementById('copyShayariBtn').addEventListener('click', () => {
+        const item = SHAYARI_COLLECTION[state.shayariIdx % SHAYARI_COLLECTION.length];
+        copyTextSafe(item.lines);
+      });
+
+      // Sky Wish Release Controls
+      const wishInput = document.getElementById('skyWishInput');
+      function handleWishSubmit() {
+        const val = (wishInput.value || '').trim();
+        if (!val) {
+          showToast('Pehle kuch dil ki baat likho!', '💭');
+          return;
+        }
+        launchFloatingWish(val);
+        wishInput.value = '';
+        showToast('Tumhari baat aasman ke sitaron mein ud gayi!', '🌠');
+      }
+
+      document.getElementById('sendSkyWishBtn').addEventListener('click', handleWishSubmit);
+      wishInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleWishSubmit();
+      });
+
+      document.querySelectorAll('.quick-wish-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const text = btn.getAttribute('data-quickwish');
+          launchFloatingWish(text);
+          showToast('Released into the stars!', '🌠');
+        });
+      });
+
+      // Guided Breathing Controls
+      const breathCard = document.getElementById('breathingStageCard');
+      const canvasHint = document.getElementById('canvasHintBanner');
+
+      function toggleBreathingWidget(forceState = null) {
+        state.breathingOpen = forceState !== null ? forceState : !state.breathingOpen;
+        if (state.breathingOpen) {
+          breathCard.classList.remove('hidden');
+          breathCard.classList.add('flex');
+          canvasHint.classList.add('hidden');
+          startBreathingCycle();
+        } else {
+          breathCard.classList.add('hidden');
+          breathCard.classList.remove('flex');
+          canvasHint.classList.remove('hidden');
+          if (breathIntervalId) clearInterval(breathIntervalId);
+        }
+      }
+
+      document.getElementById('toggleBreathBtn').addEventListener('click', () => toggleBreathingWidget());
+      document.getElementById('closeBreathBtn').addEventListener('click', () => toggleBreathingWidget(false));
+
+      document.querySelectorAll('.breath-pattern-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.breathPattern = btn.getAttribute('data-breathpattern');
+          document.querySelectorAll('.breath-pattern-btn').forEach((b) => {
+            b.classList.toggle('active', b === btn);
+          });
+          startBreathingCycle();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
